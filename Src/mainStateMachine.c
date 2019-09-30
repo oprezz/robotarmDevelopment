@@ -21,19 +21,6 @@ MSM_state_fn msmStateReset, msmStateHoming, msmStateReady, msmStateLearning, msm
 
 
 
-/* @Utility function
- * TODO: ABS value is not yet implemented
- */
-uint8_t maxOfThree(uint8_t value1, uint8_t value2, uint8_t value3)
-{
-	uint8_t max = 0;
-	max = (value1 > value2) ? value1 : value2;
-	max = (max > value3) ? max : value3;
-
-	return max;
-}
-
-
 /* Reset state of the main state machine.
  * to be implemented
  * */
@@ -80,48 +67,43 @@ uint8_t msmStateLearning(struct MSM_state* state)
 }
 
 /* Running state of the main state machine.
- * to be implemented
+ * to be implemented: grabbing
  * */
 uint8_t msmStateRunning(struct MSM_state* state)
 {
-	uint8_t RCRValue = 0;
-	if ((MotorR1.motorState == 0) && (MotorPHorizontal.motorState == 0))
+	/* keep track of the current position */
+	static uint8_t posIdx = 0u;
+	uint8_t RCRValue = 0u;
+
+	/* motors are not running OR the Timer1 is ready, this case the RCR has reached zero,
+	 * but the arm is not yet at the desired position */
+	if (((MotorR1.motorState == MOTORSTATE_STOPPED)			&&
+		(MotorPHorizontal.motorState == MOTORSTATE_STOPPED) &&
+		(MotorPVertical.motorState == MOTORSTATE_STOPPED)) ||
+		(HAL_TIM_STATE_READY == &htim1.State))
 	{
-		/* set des pos */
-
-
-		MotorR1.desiredPos = 15;
-		MotorPHorizontal.desiredPos = 6;
-
-		/* calc rcr and init timer */
-		RCRValue = maxOfThree(MotorR1.desiredPos-MotorR1.currPos, MotorPHorizontal.desiredPos-MotorPHorizontal.currPos, MotorPVertical.desiredPos - MotorPVertical.currPos);
-		htim1.Init.RepetitionCounter = RCRValue;
-		if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+		/* if desired position is reached, set the next position */
+		if (PosReached())
 		{
-			Error_Handler();
+			/* set desired position */
+			setDesiredPos(posIdx);
+
+			/* set the required directions of the motors */
+			setDirections();
 		}
 
-		/* set other motor params and start pwm */
-		MotorR1.motorState = 1;
-		MotorR1.dir = 2;
-		MotorPHorizontal.motorState = 1;
-		MotorPHorizontal.dir = 2;
-		HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
-		HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_2);
+		/* calc RCR - repetition counter register */
+		RCRValue = calcRcrValue();
+
+		/* Start the timer with the new RCRValue */
+		ReInitMotorTimer(RCRValue);
+
+		/* set other motorstate params and start pwm */
+		StartMotorPWMs();
 	}
 
-	if (MotorPHorizontal.currPos == MotorPHorizontal.desiredPos)
-	{
-
-		MotorPHorizontal.motorState = 2;
-		HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_2);
-	}
-
-	if (MotorR1.currPos == MotorR1.desiredPos)
-	{
-		MotorR1.motorState = 2;
-		HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_1);
-	}
+	/* stop motor if reached desired position */
+	StopMotor();
 
 	return state->stateName;
 }
@@ -136,4 +118,7 @@ uint8_t msmStateError(struct MSM_state* state)
 
 	return state->stateName;
 }
-/* */
+
+
+
+

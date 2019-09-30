@@ -22,6 +22,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "mainStateMachine.h"
+#include "utilityFunctions.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -35,29 +36,31 @@ dtMotor MotorR1 = {
 		.currPos = 0,
 		.desiredPos = 0,
 		.homed = false,
-		.dir = 0,
+		.dir = MOTORDIR_NEGATIVE,
 		.allowedDir = 4,
-		.motorState = 0
+		.motorState = MOTORSTATE_STOPPED
 };
 dtMotor MotorPHorizontal = {
 		.ID = 2,
 		.currPos = 0,
 		.desiredPos = 0,
 		.homed = false,
-		.dir = 0,
+		.dir = MOTORDIR_NEGATIVE,
 		.allowedDir = 4,
-		.motorState = 0
+		.motorState = MOTORSTATE_STOPPED
 };
 dtMotor MotorPVertical = {
 		.ID = 3,
 		.currPos = 0,
 		.desiredPos = 0,
 		.homed = false,
-		.dir = 0,
+		.dir = MOTORDIR_NEGATIVE,
 		.allowedDir = 4,
-		.motorState = 0
+		.motorState = MOTORSTATE_STOPPED
 };
 
+/* positions - 12 piece , init in main*/
+position desiredPositions[12];
 
 /* USER CODE END PTD */
 
@@ -122,6 +125,8 @@ void StartCommunicationTask(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  /* system parameters */
+  const uint8_t posPieceNumber = 12;
 
   /* USER CODE END 1 */
   
@@ -150,7 +155,9 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM3_Init();
   MX_TIM9_Init();
+
   /* USER CODE BEGIN 2 */
+  initPositions(posPieceNumber);
 
   /* USER CODE END 2 */
 
@@ -703,7 +710,6 @@ void StartCommunicationTask(void const * argument)
 {
   /* USER CODE BEGIN StartCommunicationTask */
   uint8_t temp_08 = 0;
-  uint16_t temp_16 = 0;
   uint32_t temp_32 = 0;
 
   uint32_t lastRunTick = 0;

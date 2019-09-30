@@ -248,17 +248,18 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 	{
 		switch (htim->Channel)
 		{
+			/* count current movement */
 			case HAL_TIM_ACTIVE_CHANNEL_1:
-				// count current movement
-				MotorR1.currPos = (MotorR1.dir == 2) ? (MotorR1.currPos + 1) : (MotorR1.currPos - 1);
+				MotorR1.currPos = (MotorR1.dir == 1) ? (MotorR1.currPos + 1) : (MotorR1.currPos - 1);
 				HAL_GPIO_TogglePin(GPIOG, LD3_Pin);
 				break;
 
 			case HAL_TIM_ACTIVE_CHANNEL_2:
-				MotorPHorizontal.currPos = (MotorPHorizontal.dir == 2) ? (MotorPHorizontal.currPos + 1) : (MotorPHorizontal.currPos - 1);
+				MotorPHorizontal.currPos = (MotorPHorizontal.dir == 1) ? (MotorPHorizontal.currPos + 1) : (MotorPHorizontal.currPos - 1);
 				break;
 
 			case HAL_TIM_ACTIVE_CHANNEL_3:
+				MotorPVertical.currPos = (MotorPVertical.dir == 1) ? (MotorPVertical.currPos + 1) : (MotorPVertical.currPos - 1);
 				break;
 		}
 	}

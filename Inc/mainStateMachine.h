@@ -11,6 +11,7 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "main.h"
+#include "utilityFunctions.h"
 
 
 /* main state machine structure declaration */
@@ -45,5 +46,6 @@ uint8_t msmStateLearning(struct MSM_state*);
 uint8_t msmStateRunning(struct MSM_state*);
 uint8_t msmStateError(struct MSM_state*);
 /* */
+
 
 #endif /* MAINSTATEMACHINE_H_ */
