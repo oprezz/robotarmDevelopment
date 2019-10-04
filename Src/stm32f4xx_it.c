@@ -25,6 +25,7 @@
 #include "task.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "utilityFunctions.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,11 +63,13 @@ extern DMA_HandleTypeDef hdma_tim2_up_ch3;
 extern DMA_HandleTypeDef hdma_tim2_ch2_ch4;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim6;
+extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN EV */
 extern dtMotor MotorR1;
 extern dtMotor MotorPHorizontal;
 extern dtMotor MotorPVertical;
+extern volatile uint16_t RCRRemainingValue;
 
 /* USER CODE END EV */
 
@@ -243,24 +246,44 @@ void TIM6_DAC_IRQHandler(void)
  */
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-
 	if(htim->Instance == htim1.Instance)
 	{
+		/* a pulse on any TIM1 channel is generated -> one step, lower RCR */
+		RCRRemainingValue--;
+
 		switch (htim->Channel)
 		{
 			/* count current movement */
 			case HAL_TIM_ACTIVE_CHANNEL_1:
-				MotorR1.currPos = (MotorR1.dir == 1) ? (MotorR1.currPos + 1) : (MotorR1.currPos - 1);
-				HAL_GPIO_TogglePin(GPIOG, LD3_Pin);
+				MotorR1.currPos = (MotorR1.dir == MOTORDIR_POSITIVE) ? (MotorR1.currPos + 1) : (MotorR1.currPos - 1);
+				if (MotorR1.currPos == MotorR1.desiredPos)
+				{
+					HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_1);
+					MotorR1.motorState = MOTORSTATE_STOPPED;
+				}
 				break;
 
 			case HAL_TIM_ACTIVE_CHANNEL_2:
-				MotorPHorizontal.currPos = (MotorPHorizontal.dir == 1) ? (MotorPHorizontal.currPos + 1) : (MotorPHorizontal.currPos - 1);
+				MotorPHorizontal.currPos = (MotorPHorizontal.dir == MOTORDIR_POSITIVE) ? (MotorPHorizontal.currPos + 1) : (MotorPHorizontal.currPos - 1);
+				if (MotorPHorizontal.currPos == MotorPHorizontal.desiredPos)
+				{
+					HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_2);
+					MotorPHorizontal.motorState = MOTORSTATE_STOPPED;
+				}
 				break;
 
 			case HAL_TIM_ACTIVE_CHANNEL_3:
-				MotorPVertical.currPos = (MotorPVertical.dir == 1) ? (MotorPVertical.currPos + 1) : (MotorPVertical.currPos - 1);
+				MotorPVertical.currPos = (MotorPVertical.dir == MOTORDIR_POSITIVE) ? (MotorPVertical.currPos + 1) : (MotorPVertical.currPos - 1);
+				if (MotorPVertical.currPos == MotorPVertical.desiredPos)
+				{
+					HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_3);
+					MotorPVertical.motorState = MOTORSTATE_STOPPED;
+				}
 				break;
+
+			default:
+				break;
+
 		}
 	}
 }

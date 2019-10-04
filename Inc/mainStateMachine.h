@@ -12,6 +12,7 @@
 #include "cmsis_os.h"
 #include "main.h"
 #include "utilityFunctions.h"
+#include <stdio.h>
 
 
 /* main state machine structure declaration */

@@ -23,6 +23,7 @@
 #include "cmsis_os.h"
 #include "mainStateMachine.h"
 #include "utilityFunctions.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -60,7 +61,7 @@ dtMotor MotorPVertical = {
 };
 
 /* positions - 12 piece , init in main*/
-position desiredPositions[12];
+dtPosition desiredPositions[MAXPOSITIONS];
 
 /* USER CODE END PTD */
 
@@ -126,7 +127,6 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   /* system parameters */
-  const uint8_t posPieceNumber = 12;
 
   /* USER CODE END 1 */
   
@@ -157,7 +157,7 @@ int main(void)
   MX_TIM9_Init();
 
   /* USER CODE BEGIN 2 */
-  initPositions(posPieceNumber);
+  initPositions();
 
   /* USER CODE END 2 */
 
@@ -293,9 +293,11 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 16799;
+  //htim1.Init.Prescaler = 16799/2;
+  htim1.Init.Prescaler = 1679;	// def: 1679
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 9999;
+  //htim1.Init.Period = 9999/2;
+  htim1.Init.Period = 999;		// def: 999
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -323,7 +325,8 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM2;
-  sConfigOC.Pulse = 4999;
+  //sConfigOC.Pulse = 4999/2;
+  sConfigOC.Pulse = 499;		//def: 499
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -673,9 +676,15 @@ void StartDefaultTask(void const * argument)
 void StartRobotControlTask(void const * argument)
 {
   /* USER CODE BEGIN StartRobotControlTask */
-  uint32_t lastRunTick = 0;
-  uint32_t minRunTick = 10; //minimum time that the task has to run
   uint8_t temp_08 = 0;
+
+  TickType_t xLastWakeTime;
+  const TickType_t xDelay10ms = pdMS_TO_TICKS(10);
+
+  /* The xLastWakeTime variable needs to be initialized with the current tick
+   * count. Note that this is the only time the variable is written to explicitly.
+   * After this xLastWakeTime is automatically updated within vTaskDelayUntil(). */
+  xLastWakeTime = xTaskGetTickCount();
 
   /* create the function pointer and set to reset state*/
   struct MSM_state msmState_ptr = {
@@ -686,15 +695,13 @@ void StartRobotControlTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	if((HAL_GetTick() - lastRunTick) > minRunTick)
-	{
-		lastRunTick = HAL_GetTick();
 
-		/* running the next state */
-		temp_08 = msmState_ptr.next(&msmState_ptr);
+	/* running the next state */
+	temp_08 = msmState_ptr.next(&msmState_ptr);
 
-	}
-	osDelay(1);
+	/* this makes the task to run at the prescribed fixed frequency */
+	osDelayUntil(&xLastWakeTime, xDelay10ms);
+	//osDelay(1);
   }
   /* USER CODE END StartRobotControlTask */
 }
@@ -711,28 +718,29 @@ void StartCommunicationTask(void const * argument)
   /* USER CODE BEGIN StartCommunicationTask */
   uint8_t temp_08 = 0;
   uint32_t temp_32 = 0;
+  char DEBUGMSG_10[48] = {""};
 
-  uint32_t lastRunTick = 0;
-  uint32_t minRunTick = 500; //minimum time that the task has to run
+  TickType_t xLastWakeTime;
+  const TickType_t xDelay250ms = pdMS_TO_TICKS(500);
+
+  /* The xLastWakeTime variable needs to be initialized with the current tick
+   * count. Note that this is the only time the variable is written to explicitly.
+   * After this xLastWakeTime is automatically updated within vTaskDelayUntil(). */
+  xLastWakeTime = xTaskGetTickCount();
 
   /* Infinite loop */
   for(;;)
   {
 
-	if((HAL_GetTick() - lastRunTick) > minRunTick)
-	{
-		lastRunTick = HAL_GetTick();
-		temp_32 = MotorR1.currPos;
-		HAL_UART_Transmit(&huart1, (uint8_t*)(&temp_32), 4, 1000);
-		temp_08 = 255;
-		HAL_UART_Transmit(&huart1, (uint8_t*)(&temp_08), 1, 1000);
-		temp_32 = MotorPHorizontal.currPos;
-		HAL_UART_Transmit(&huart1, (uint8_t*)(&temp_32), 4, 1000);
-		temp_08 = 254;
-		HAL_UART_Transmit(&huart1, (uint8_t*)(&temp_08), 1, 1000);
-	}
+	/* prints the current and desired positions to serial - recommendation: use XTCO program as serial console*/
+	sprintf(DEBUGMSG_10, "{R1,PH,PV}:{%4lu(%4lu), %4lu(%4lu), %4lu(%4lu)}", MotorR1.currPos, MotorR1.desiredPos, MotorPHorizontal.currPos, MotorPHorizontal.desiredPos, MotorPVertical.currPos, MotorPVertical.desiredPos);
+	HAL_UART_Transmit(&huart1, (uint8_t*)(&DEBUGMSG_10), sizeof(DEBUGMSG_10)/sizeof(DEBUGMSG_10[0]), 1000);
 
-	osDelay(1);
+	LedToggle();
+
+	/* this makes the task to run at the prescribed fixed frequency */
+	osDelayUntil(&xLastWakeTime, xDelay250ms);
+	//osDelay(1);
   }
   /* USER CODE END StartCommunicationTask */
 }

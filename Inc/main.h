@@ -43,9 +43,9 @@ extern "C" {
 typedef struct{
 	const uint8_t ID;
 	volatile uint32_t currPos;
-	uint32_t desiredPos;
+	volatile uint32_t desiredPos;
 	bool homed;
-	uint8_t dir; 		// 0: negative direction, 1: positive direction
+	volatile uint8_t dir; 		// 0: negative direction, 1: positive direction
 	uint8_t allowedDir;
 	uint8_t motorState; // 0: stopped, 1: running
 } dtMotor;
@@ -109,6 +109,9 @@ void Error_Handler(void);
 #define MOTORSTATE_STOPPED (uint8_t)0u
 #define MOTORDIR_POSITIVE (uint8_t)1u
 #define MOTORDIR_NEGATIVE (uint8_t)0u
+
+/* Positions */
+#define MAXPOSITIONS (uint8_t)12u
 
 /* USER CODE END Private defines */
 

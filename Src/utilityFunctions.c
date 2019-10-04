@@ -7,12 +7,16 @@
 
 #include "utilityFunctions.h"
 
+/* Global variables */
+volatile uint16_t RCRRemainingValue = 0;
+
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim1;
 extern dtMotor MotorR1;
 extern dtMotor MotorPHorizontal;
 extern dtMotor MotorPVertical;
-extern position desiredPositions[];
+extern dtPosition desiredPositions[];
+
 
 /* @Utility function
  *
@@ -31,14 +35,16 @@ uint8_t maxOfThree(uint8_t value1, uint8_t value2, uint8_t value3)
 /* Initialize positions to default value
  * ~ constructor
  */
-void initPositions(const uint8_t pieceNumber)
+void initPositions()
 {
-	for(uint8_t idx = 0; idx < pieceNumber; idx++)
+	for(uint8_t idx = 0; idx < MAXPOSITIONS; idx++)
 	{
-		desiredPositions[idx].x = 0u;
-		desiredPositions[idx].y = 0u;
-		desiredPositions[idx].z = 0u;
-		desiredPositions[idx].grabPos = 0u;
+		desiredPositions[idx] = (dtPosition){
+			.x = 0u,
+			.y = 0u,
+			.z = 0u,
+			.grabPos = 0u
+		};
 	}
 }
 
@@ -59,7 +65,7 @@ void setDesiredPos(const uint8_t posIdx)
 /* Calculates RCR value
  * RCR value could be bigger then uint8 but then it should be handled in other place
  */
-uint8_t calcRcrValue()
+uint8_t calcRcrValue(uint8_t *RCRoverflow)
 {
 	uint8_t RCRValue;
 	/* distance between current pos and desired pos - abs value */
@@ -67,7 +73,20 @@ uint8_t calcRcrValue()
 	uint32_t yTempu32 = (MotorPHorizontal.desiredPos > MotorPHorizontal.currPos) ? (MotorPHorizontal.desiredPos - MotorPHorizontal.currPos) : (MotorPHorizontal.currPos - MotorPHorizontal.desiredPos);
 	uint32_t zTempu32 = (MotorPVertical.desiredPos > MotorPVertical.currPos) ? (MotorPVertical.desiredPos - MotorPVertical.currPos) : (MotorPVertical.currPos - MotorPVertical.desiredPos);
 
-	RCRValue = maxOfThree((uint8_t)xTempu32, (uint8_t)yTempu32, (uint8_t)zTempu32);
+	/* count the total steps of the 3 CH in one RCR cycle */
+	RCRRemainingValue = (uint8_t)xTempu32 + (uint8_t)yTempu32 + (uint8_t)zTempu32;
+
+	if ((xTempu32 > UINT8T_MAXV) || (yTempu32 > UINT8T_MAXV) || (zTempu32 > UINT8T_MAXV))
+	{
+		*RCRoverflow = 1;
+		RCRValue = 255;
+	}
+	else
+	{
+		*RCRoverflow = 0;
+		RCRValue = maxOfThree((uint8_t)xTempu32, (uint8_t)yTempu32, (uint8_t)zTempu32);
+	}
+
 	return RCRValue;
 }
 
@@ -89,19 +108,19 @@ void ReInitMotorTimer(const uint8_t RCRValue)
  */
 void StartMotorPWMs()
 {
-	if (MOTORSTATE_STOPPED == MotorR1.motorState)
+	if (MotorR1.currPos != MotorR1.desiredPos)
 	{
 		MotorR1.motorState = MOTORSTATE_RUNNING;
 		HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
 	}
 
-	if (MOTORSTATE_STOPPED == MotorPHorizontal.motorState)
+	if (MotorPHorizontal.currPos != MotorPHorizontal.desiredPos)
 	{
 		MotorPHorizontal.motorState = MOTORSTATE_RUNNING;
 		HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_2);
 	}
 
-	if (MOTORSTATE_STOPPED == MotorPVertical.motorState)
+	if (MotorPVertical.currPos != MotorPVertical.desiredPos)
 	{
 		MotorPVertical.motorState = MOTORSTATE_RUNNING;
 		HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_3);
@@ -114,18 +133,21 @@ void StartMotorPWMs()
 void StopMotor()
 {
 	if ((MOTORSTATE_RUNNING == MotorR1.motorState) && (MotorR1.currPos == MotorR1.desiredPos))
+	//if ((MOTORSTATE_RUNNING == MotorR1.motorState))
 	{
 		MotorR1.motorState = MOTORSTATE_STOPPED;
 		HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_1);
 	}
 
 	if ((MOTORSTATE_RUNNING == MotorPHorizontal.motorState) && (MotorPHorizontal.currPos == MotorPHorizontal.desiredPos))
+	//if ((MOTORSTATE_RUNNING == MotorPHorizontal.motorState))
 	{
 		MotorPHorizontal.motorState = MOTORSTATE_STOPPED;
 		HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_2);
 	}
 
 	if ((MOTORSTATE_RUNNING == MotorPVertical.motorState) && (MotorPVertical.currPos == MotorPVertical.desiredPos))
+	//if ((MOTORSTATE_RUNNING == MotorPVertical.motorState))
 	{
 		MotorPVertical.motorState = MOTORSTATE_STOPPED;
 		HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_3);
@@ -166,4 +188,12 @@ bool PosReached()
 
 
 	return retVal;
+}
+
+/*
+ * Toggle in-board LD4 pin for debugging info
+ */
+void LedToggle()
+{
+	HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
 }
