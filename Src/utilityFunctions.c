@@ -195,5 +195,5 @@ bool PosReached()
  */
 void LedToggle()
 {
-	HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+	HAL_GPIO_TogglePin(RedLed_LD4_GPIO_Port, RedLed_LD4_Pin);
 }
