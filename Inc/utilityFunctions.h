@@ -12,17 +12,9 @@
 #include "cmsis_os.h"
 #include "main.h"
 #include "mainStateMachine.h"
+#include "motors.h"
 
 #define UINT8T_MAXV (uint8_t)255u
-
-/* type definitions */
-typedef struct
-{
-	uint32_t x;
-	uint32_t y;
-	uint32_t z;
-	uint8_t grabPos; // 0 - open, 1 - grabbed, rest is reserved for special grabbing positions
-} dtPosition;
 
 /* global variable definitions */
 
@@ -40,7 +32,8 @@ void ReInitMotorTimer(const uint8_t RCRValue);
 void StartMotorPWMs();
 bool PosReached();
 void StopMotor();
-void setDirections();
+uint32_t setAllDirectionsTowardsDesiredPos();
+void FreeRunMotorInDesiredDir(const uint8_t MotorID, const uint8_t desDir);
 void LedToggle();
 
 #endif /* UTILITYFUNCTIONS_H_ */

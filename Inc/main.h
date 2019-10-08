@@ -38,17 +38,6 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-/* motor typedef */
-typedef struct{
-	const uint8_t ID;
-	volatile uint32_t currPos;
-	volatile uint32_t desiredPos;
-	bool homed;
-	volatile uint8_t dir; 		// 0: negative direction, 1: positive direction
-	uint8_t allowedDir;
-	uint8_t motorState; // 0: stopped, 1: running
-} dtMotor;
-
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -71,10 +60,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define ButtonPos_MotorPVertical_Pin GPIO_PIN_3
-#define ButtonPos_MotorPVertical_GPIO_Port GPIOF
-#define ButtonNeg_MotorPVertical_Pin GPIO_PIN_4
-#define ButtonNeg_MotorPVertical_GPIO_Port GPIOF
+#define MotorPVertical_DIR_Pin GPIO_PIN_13
+#define MotorPVertical_DIR_GPIO_Port GPIOC
+#define MotorPVertical_ENABLE_Pin GPIO_PIN_14
+#define MotorPVertical_ENABLE_GPIO_Port GPIOC
+#define MotorPVertical_COM_Pin GPIO_PIN_15
+#define MotorPVertical_COM_GPIO_Port GPIOC
 #define PH0_OSC_IN_Pin GPIO_PIN_0
 #define PH0_OSC_IN_GPIO_Port GPIOH
 #define PH1_OSC_OUT_Pin GPIO_PIN_1
@@ -93,14 +84,22 @@ void Error_Handler(void);
 #define SPI1_MOSI_GPIOEXTENDER_GPIO_Port GPIOA
 #define ButtonPos_MotorR1_Pin GPIO_PIN_0
 #define ButtonPos_MotorR1_GPIO_Port GPIOG
+#define ButtonPos_MotorR1_EXTI_IRQn EXTI0_IRQn
 #define ButtonPos_MotorR1G1_Pin GPIO_PIN_1
 #define ButtonPos_MotorR1G1_GPIO_Port GPIOG
+#define ButtonPos_MotorR1G1_EXTI_IRQn EXTI1_IRQn
 #define STEP_MotorR1_Pin GPIO_PIN_9
 #define STEP_MotorR1_GPIO_Port GPIOE
 #define STEP_MotorPHorizontal_Pin GPIO_PIN_11
 #define STEP_MotorPHorizontal_GPIO_Port GPIOE
+#define MotorR1_DIR_Pin GPIO_PIN_12
+#define MotorR1_DIR_GPIO_Port GPIOE
 #define STEP_MotorPVertical_Pin GPIO_PIN_13
 #define STEP_MotorPVertical_GPIO_Port GPIOE
+#define MotorR1_COM_Pin GPIO_PIN_14
+#define MotorR1_COM_GPIO_Port GPIOE
+#define MotorR1_ENABLE_Pin GPIO_PIN_15
+#define MotorR1_ENABLE_GPIO_Port GPIOE
 #define UART3_TX_reservedforfutureuse_Pin GPIO_PIN_10
 #define UART3_TX_reservedforfutureuse_GPIO_Port GPIOB
 #define UART3_RX_reservedforfutureuse_Pin GPIO_PIN_11
@@ -113,30 +112,52 @@ void Error_Handler(void);
 #define STEP_gripperMotorRingPinky_GPIO_Port GPIOD
 #define LSPos_MotorR1_Pin GPIO_PIN_2
 #define LSPos_MotorR1_GPIO_Port GPIOG
+#define LSPos_MotorR1_EXTI_IRQn EXTI2_IRQn
+#define LSNeg_MotorR1_Pin GPIO_PIN_3
+#define LSNeg_MotorR1_GPIO_Port GPIOG
+#define LSNeg_MotorR1_EXTI_IRQn EXTI3_IRQn
+#define LSPos_MotorPHorizontal_Pin GPIO_PIN_4
+#define LSPos_MotorPHorizontal_GPIO_Port GPIOG
+#define LSPos_MotorPHorizontal_EXTI_IRQn EXTI4_IRQn
 #define LSNeg_MotorPHorizontal_Pin GPIO_PIN_5
 #define LSNeg_MotorPHorizontal_GPIO_Port GPIOG
+#define LSNeg_MotorPHorizontal_EXTI_IRQn EXTI9_5_IRQn
 #define LSPos_MotorPVertical_Pin GPIO_PIN_6
 #define LSPos_MotorPVertical_GPIO_Port GPIOG
+#define LSPos_MotorPVertical_EXTI_IRQn EXTI9_5_IRQn
 #define LSNeg_MotorPVertical_Pin GPIO_PIN_7
 #define LSNeg_MotorPVertical_GPIO_Port GPIOG
+#define LSNeg_MotorPVertical_EXTI_IRQn EXTI9_5_IRQn
 #define GPIO_PG8_Interrupt_reservedforfutureuse_Pin GPIO_PIN_8
 #define GPIO_PG8_Interrupt_reservedforfutureuse_GPIO_Port GPIOG
+#define GPIO_PG8_Interrupt_reservedforfutureuse_EXTI_IRQn EXTI9_5_IRQn
 #define Encoder2MotorR1_Pin GPIO_PIN_7
 #define Encoder2MotorR1_GPIO_Port GPIOC
+#define MotorPHorizontal_DIR_Pin GPIO_PIN_8
+#define MotorPHorizontal_DIR_GPIO_Port GPIOC
 #define UART1_TX_STLINK_PC_Pin GPIO_PIN_9
 #define UART1_TX_STLINK_PC_GPIO_Port GPIOA
 #define UART1_RX_STLINK_PC_Pin GPIO_PIN_10
 #define UART1_RX_STLINK_PC_GPIO_Port GPIOA
 #define ButtonPos_MotorPHorizontal_Pin GPIO_PIN_13
 #define ButtonPos_MotorPHorizontal_GPIO_Port GPIOA
+#define ButtonPos_MotorPHorizontal_EXTI_IRQn EXTI15_10_IRQn
 #define ButtonNeg_MotorPHorizontal_Pin GPIO_PIN_14
 #define ButtonNeg_MotorPHorizontal_GPIO_Port GPIOA
+#define ButtonNeg_MotorPHorizontal_EXTI_IRQn EXTI15_10_IRQn
+#define MotorPHorizontal_ENABLE_Pin GPIO_PIN_11
+#define MotorPHorizontal_ENABLE_GPIO_Port GPIOC
+#define MotorPHorizontal_COM_Pin GPIO_PIN_12
+#define MotorPHorizontal_COM_GPIO_Port GPIOC
 #define ButtonGrip_Actuator_Pin GPIO_PIN_9
 #define ButtonGrip_Actuator_GPIO_Port GPIOG
+#define ButtonGrip_Actuator_EXTI_IRQn EXTI9_5_IRQn
 #define ButtonRelease_Actuator_Pin GPIO_PIN_10
 #define ButtonRelease_Actuator_GPIO_Port GPIOG
+#define ButtonRelease_Actuator_EXTI_IRQn EXTI15_10_IRQn
 #define Button_EMERGENCY_Pin GPIO_PIN_11
 #define Button_EMERGENCY_GPIO_Port GPIOG
+#define Button_EMERGENCY_EXTI_IRQn EXTI15_10_IRQn
 #define GreenLed_LD3_Pin GPIO_PIN_13
 #define GreenLed_LD3_GPIO_Port GPIOG
 #define RedLed_LD4_Pin GPIO_PIN_14
@@ -148,15 +169,6 @@ void Error_Handler(void);
 #define I2C1_SDA_reservedforfutureuse_Pin GPIO_PIN_7
 #define I2C1_SDA_reservedforfutureuse_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-
-/* motor defines */
-#define MOTORSTATE_RUNNING (uint8_t)1u
-#define MOTORSTATE_STOPPED (uint8_t)0u
-#define MOTORDIR_POSITIVE (uint8_t)1u
-#define MOTORDIR_NEGATIVE (uint8_t)0u
-
-/* Positions */
-#define MAXPOSITIONS (uint8_t)12u
 
 /* USER CODE END Private defines */
 

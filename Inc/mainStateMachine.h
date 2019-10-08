@@ -25,6 +25,12 @@ typedef enum{
 	MSM_STATE_ERROR = (uint8_t)50u
 } FSM_mainStateMachine;
 
+/* homing state machine */
+typedef enum{
+	HSM_STATE_RESETHOMEDBITS = (uint8_t)0u,
+	HSM_STATE_MOTORPH_NEG = (uint8_t)5u,
+};
+
 struct MSM_state;
 
 /* MSM function type definition */

@@ -31,36 +31,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-dtMotor MotorR1 = {
-		.ID = 1,
-		.currPos = 0,
-		.desiredPos = 0,
-		.homed = false,
-		.dir = MOTORDIR_NEGATIVE,
-		.allowedDir = 4,
-		.motorState = MOTORSTATE_STOPPED
-};
-dtMotor MotorPHorizontal = {
-		.ID = 2,
-		.currPos = 0,
-		.desiredPos = 0,
-		.homed = false,
-		.dir = MOTORDIR_NEGATIVE,
-		.allowedDir = 4,
-		.motorState = MOTORSTATE_STOPPED
-};
-dtMotor MotorPVertical = {
-		.ID = 3,
-		.currPos = 0,
-		.desiredPos = 0,
-		.homed = false,
-		.dir = MOTORDIR_NEGATIVE,
-		.allowedDir = 4,
-		.motorState = MOTORSTATE_STOPPED
-};
-
-/* positions - 12 piece , init in main*/
-dtPosition desiredPositions[MAXPOSITIONS];
 
 /* USER CODE END PTD */
 
@@ -726,34 +696,56 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, MotorPVertical_DIR_Pin|MotorPVertical_ENABLE_Pin|MotorPVertical_COM_Pin|MotorPHorizontal_DIR_Pin 
+                          |MotorPHorizontal_ENABLE_Pin|MotorPHorizontal_COM_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, MotorR1_DIR_Pin|MotorR1_COM_Pin|MotorR1_ENABLE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOG, GreenLed_LD3_Pin|RedLed_LD4_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : ButtonPos_MotorPVertical_Pin ButtonNeg_MotorPVertical_Pin */
-  GPIO_InitStruct.Pin = ButtonPos_MotorPVertical_Pin|ButtonNeg_MotorPVertical_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  /*Configure GPIO pins : MotorPVertical_DIR_Pin MotorPVertical_ENABLE_Pin MotorPVertical_COM_Pin MotorPHorizontal_DIR_Pin 
+                           MotorPHorizontal_ENABLE_Pin MotorPHorizontal_COM_Pin */
+  GPIO_InitStruct.Pin = MotorPVertical_DIR_Pin|MotorPVertical_ENABLE_Pin|MotorPVertical_COM_Pin|MotorPHorizontal_DIR_Pin 
+                          |MotorPHorizontal_ENABLE_Pin|MotorPHorizontal_COM_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ButtonPos_MotorR1_Pin ButtonPos_MotorR1G1_Pin LSPos_MotorR1_Pin LSNeg_MotorPHorizontal_Pin 
+  /*Configure GPIO pins : ButtonPos_MotorR1_Pin ButtonPos_MotorR1G1_Pin */
+  GPIO_InitStruct.Pin = ButtonPos_MotorR1_Pin|ButtonPos_MotorR1G1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : MotorR1_DIR_Pin MotorR1_COM_Pin MotorR1_ENABLE_Pin */
+  GPIO_InitStruct.Pin = MotorR1_DIR_Pin|MotorR1_COM_Pin|MotorR1_ENABLE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LSPos_MotorR1_Pin LSNeg_MotorR1_Pin LSPos_MotorPHorizontal_Pin LSNeg_MotorPHorizontal_Pin 
                            LSPos_MotorPVertical_Pin Button_EMERGENCY_Pin */
-  GPIO_InitStruct.Pin = ButtonPos_MotorR1_Pin|ButtonPos_MotorR1G1_Pin|LSPos_MotorR1_Pin|LSNeg_MotorPHorizontal_Pin 
+  GPIO_InitStruct.Pin = LSPos_MotorR1_Pin|LSNeg_MotorR1_Pin|LSPos_MotorPHorizontal_Pin|LSNeg_MotorPHorizontal_Pin 
                           |LSPos_MotorPVertical_Pin|Button_EMERGENCY_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LSNeg_MotorPVertical_Pin GPIO_PG8_Interrupt_reservedforfutureuse_Pin ButtonGrip_Actuator_Pin ButtonRelease_Actuator_Pin */
-  GPIO_InitStruct.Pin = LSNeg_MotorPVertical_Pin|GPIO_PG8_Interrupt_reservedforfutureuse_Pin|ButtonGrip_Actuator_Pin|ButtonRelease_Actuator_Pin;
+  /*Configure GPIO pins : LSNeg_MotorPVertical_Pin GPIO_PG8_Interrupt_reservedforfutureuse_Pin */
+  GPIO_InitStruct.Pin = LSNeg_MotorPVertical_Pin|GPIO_PG8_Interrupt_reservedforfutureuse_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
@@ -761,8 +753,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : ButtonPos_MotorPHorizontal_Pin ButtonNeg_MotorPHorizontal_Pin */
   GPIO_InitStruct.Pin = ButtonPos_MotorPHorizontal_Pin|ButtonNeg_MotorPHorizontal_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : ButtonGrip_Actuator_Pin ButtonRelease_Actuator_Pin */
+  GPIO_InitStruct.Pin = ButtonGrip_Actuator_Pin|ButtonRelease_Actuator_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /*Configure GPIO pins : GreenLed_LD3_Pin RedLed_LD4_Pin */
   GPIO_InitStruct.Pin = GreenLed_LD3_Pin|RedLed_LD4_Pin;
@@ -770,6 +768,28 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 

@@ -60,10 +60,26 @@ uint8_t msmStateReset(struct MSM_state* state)
 }
 
 /* Homing state of the main state machine.
- * to be implemented
+ * homing statemachine is used
  * */
 uint8_t msmStateHoming(struct MSM_state* state)
 {
+	static uint8_t HomingStates = HSM_STATE_RESETHOMEDBITS;
+
+	switch (HomingStates)
+	{
+		case HSM_STATE_RESETHOMEDBITS:
+			MotorR1.homed = 0u;
+			MotorPHorizontal.homed = 0u;
+			MotorPVertical.homed = 0;
+			HomingStates = HSM_STATE_MOTORPH_NEG;
+			break;
+		case HSM_STATE_MOTORPH_NEG:
+			break;
+
+	}
+
+
 	state->next = msmStateReady;
 	state->stateName = MSM_STATE_READY;
 
@@ -102,6 +118,7 @@ uint8_t msmStateRunning(struct MSM_state* state)
 	/* flag, is set, if the next position is further then the possible RCR value at once */
 	static uint8_t RCRoverflow = 0u;
 	uint8_t RCRValue = 0u;
+	uint32_t setDirRetVal = 0u;
 
 	/* DEBUG ONLY */
 	char msg_01[4] = {""};
@@ -127,7 +144,7 @@ uint8_t msmStateRunning(struct MSM_state* state)
 			setDesiredPos(posIdx);
 
 			/* set the required directions of the motors */
-			setDirections();
+			setDirRetVal = setAllDirectionsTowardsDesiredPos();
 
 			posIdx = (posIdx == MAXPOSITIONS-1) ? (0u) : (posIdx + 1);
 
@@ -137,14 +154,26 @@ uint8_t msmStateRunning(struct MSM_state* state)
 			*/
 		}
 
-		/* calc RCR - repetition counter register , set RCRoverflow if needed*/
-		RCRValue = calcRcrValue(&RCRoverflow);
+		/* no error */
+		if (0u == setDirRetVal)
+		{
+			/* calc RCR - repetition counter register , set RCRoverflow if needed*/
+			RCRValue = calcRcrValue(&RCRoverflow);
 
-		/* Start the timer with the new RCRValue */
-		ReInitMotorTimer(RCRValue);
+			/* Start the timer with the new RCRValue */
+			ReInitMotorTimer(RCRValue);
 
-		/* set other motorstate params and start pwm */
-		StartMotorPWMs();
+			/* set other motorstate params and start pwm */
+			StartMotorPWMs();
+		}
+		/* error in setting the direction */
+		else
+		{
+			/* TODO: error data shall be sent later */
+			state->next = msmStateError;
+			state->stateName = MSM_STATE_ERROR;
+			return state->stateName;
+		}
 	}
 
 	/* stopping the motors are handled in IT */
