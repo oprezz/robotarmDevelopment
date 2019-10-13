@@ -81,6 +81,10 @@ void initAllStepperMotors()
 			.dirPORT = MotorPVertical_DIR_GPIO_Port
 	};
 
+	HAL_GPIO_WritePin(MotorR1_ENABLE_GPIO_Port, MotorR1_ENABLE_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MotorPHorizontal_ENABLE_GPIO_Port, MotorPHorizontal_ENABLE_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(MotorPVertical_ENABLE_GPIO_Port, MotorPVertical_ENABLE_Pin, GPIO_PIN_SET);
+
 }
 
 /* getter functions */

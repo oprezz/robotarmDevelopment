@@ -32,19 +32,19 @@ uint8_t msmStateReset(struct MSM_state* state)
 	desiredPositions[0] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 0u};
 
 	/* #1: 1st position */
-	desiredPositions[1] = (dtPosition){ .x = 10u, .y = 12u, .z = 6u, .grabPos = 0u};
+	desiredPositions[1] = (dtPosition){ .x = 200u, .y = 100u, .z = 200u, .grabPos = 0u};
 
 	/* #2: 2nd position */
-	desiredPositions[2] = (dtPosition){ .x = 20u, .y = 12u, .z = 6u, .grabPos = 0u};
+	desiredPositions[2] = (dtPosition){ .x = 400u, .y = 100u, .z = 400u, .grabPos = 0u};
 
 	/* #3: 3rd position */
-	desiredPositions[3] = (dtPosition){ .x = 30u, .y = 12u, .z = 6u, .grabPos = 1u};
+	desiredPositions[3] = (dtPosition){ .x = 600u, .y = 300u, .z = 600u, .grabPos = 1u};
 
 	/* #4: 4th position */
-	desiredPositions[4] = (dtPosition){ .x = 15u, .y = 12u, .z = 6u, .grabPos = 1u};
+	desiredPositions[4] = (dtPosition){ .x = 400u, .y = 100u, .z = 400u, .grabPos = 1u};
 
 	/* #5: 5th position */
-	desiredPositions[5] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 1u};
+	desiredPositions[5] = (dtPosition){ .x = 200u, .y = 0u, .z = 200u, .grabPos = 1u};
 
 	/* #3: 6th position */
 	desiredPositions[6] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 0u};
@@ -183,7 +183,7 @@ uint8_t msmStateRunning(struct MSM_state* state)
 	/* stop motor if reached desired position */
 	//StopMotor();
 
-	if (posIdx == MAXPOSITIONS-2u)
+	if (posIdx == (MAXPOSITIONS-2u))
 	{
 		LedLD3ON();
 		stopMotorPWM(STMOTOR_R1_ID);
