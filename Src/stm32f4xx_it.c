@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "utilityFunctions.h"
+#include "mainStateMachine.h"
 #include "motors.h"
 /* USER CODE END Includes */
 

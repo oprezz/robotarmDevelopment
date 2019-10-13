@@ -18,10 +18,6 @@
 
 /* global variable definitions */
 
-/* this variable sums up the 3 positions in one RCR cycle
- * if it goes down to zero, that means the RCR has "reached zero"
- * (RCR amount of IT's have been generated */
-volatile uint16_t RCRRemainingValue;
 
 /* function definitions */
 void LedLD3OFF();

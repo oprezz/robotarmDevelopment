@@ -15,6 +15,13 @@
 #include "motors.h"
 #include <stdio.h>
 
+/* global variables */
+/* this variable sums up the 3 positions in one RCR cycle
+ * if it goes down to zero, that means the RCR has "reached zero"
+ * (RCR amount of IT's have been generated */
+volatile uint16_t RCRRemainingValue;
+volatile uint16_t testRCRRemainingValue;
+
 
 /* main state machine structure declaration */
 typedef enum{

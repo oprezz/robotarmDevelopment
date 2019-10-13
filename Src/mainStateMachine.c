@@ -12,6 +12,10 @@ extern TIM_HandleTypeDef htim1;
 extern UART_HandleTypeDef huart1;
 extern dtPosition desiredPositions[];
 
+/* global variables */
+volatile uint16_t RCRRemainingValue = 0u;
+volatile uint16_t testRCRRemainingValue = 0u;
+
 
 /* STATES */
 MSM_state_fn msmStateReset, msmStateHoming, msmStateReady, msmStateLearning, msmStateRunning, msmStateError;
@@ -32,22 +36,25 @@ uint8_t msmStateReset(struct MSM_state* state)
 	desiredPositions[0] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 0u};
 
 	/* #1: 1st position */
-	desiredPositions[1] = (dtPosition){ .x = 200u, .y = 100u, .z = 200u, .grabPos = 0u};
+	desiredPositions[1] = (dtPosition){ .x = 200u, .y = 100u, .z = 600u, .grabPos = 0u};
 
 	/* #2: 2nd position */
-	desiredPositions[2] = (dtPosition){ .x = 400u, .y = 100u, .z = 400u, .grabPos = 0u};
+	desiredPositions[2] = (dtPosition){ .x = 200u, .y = 200u, .z = 600u, .grabPos = 0u};
 
 	/* #3: 3rd position */
-	desiredPositions[3] = (dtPosition){ .x = 600u, .y = 300u, .z = 600u, .grabPos = 1u};
+	desiredPositions[3] = (dtPosition){ .x = 200u, .y = 100u, .z = 600u, .grabPos = 1u};
 
 	/* #4: 4th position */
-	desiredPositions[4] = (dtPosition){ .x = 400u, .y = 100u, .z = 400u, .grabPos = 1u};
+	desiredPositions[4] = (dtPosition){ .x = 200u, .y = 200u, .z = 600u, .grabPos = 1u};
 
 	/* #5: 5th position */
-	desiredPositions[5] = (dtPosition){ .x = 200u, .y = 0u, .z = 200u, .grabPos = 1u};
+	desiredPositions[5] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 1u};
 
 	/* #3: 6th position */
 	desiredPositions[6] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 0u};
+
+	/* #3: 7th position */
+	desiredPositions[7] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 0u};
 
 	/* CONDITION TO BE ADDED */
 	state->next = msmStateHoming;
@@ -133,11 +140,12 @@ uint8_t msmStateRunning(struct MSM_state* state)
 	 * 	- RCRoverflow occured, because the next position is further then 255 steps (RCR is uint8)
 	 * 	- RCRRemainingValue is the total nubmer of steps that the 3 channels has to step in one RCR cycle.
 	 * 		if it has reached zero, then further steps are needed with the reinitialization of the timer
+	 * TODO: think about proper condition instead of RCR..=30
 	 * */
 	if (((getSTMotorMotorState(STMOTOR_R1_ID) == MOTORSTATE_STOPPED) &&
 		(getSTMotorMotorState(STMOTOR_PH_ID) == MOTORSTATE_STOPPED) &&
 		(getSTMotorMotorState(STMOTOR_PV_ID) == MOTORSTATE_STOPPED)) ||
-		((1u == RCRoverflow) && (0u == RCRRemainingValue)))
+		((1u == RCRoverflow) && (30u <= RCRRemainingValue)))
 	{
 
 		/* if desired position is reached, set the next position */
@@ -183,6 +191,13 @@ uint8_t msmStateRunning(struct MSM_state* state)
 	/* stop motor if reached desired position */
 	//StopMotor();
 
+	/*
+	sprintf(DEBUGMSG_u32, "rcr:%u ", RCRRemainingValue);
+	HAL_UART_Transmit(&huart1, (uint8_t*)(&DEBUGMSG_u32), sizeof(DEBUGMSG_u32)/sizeof(DEBUGMSG_u32[0]), 1000);
+	sprintf(DEBUGMSG_u32, "trcr:%u ", testRCRRemainingValue);
+	HAL_UART_Transmit(&huart1, (uint8_t*)(&DEBUGMSG_u32), sizeof(DEBUGMSG_u32)/sizeof(DEBUGMSG_u32[0]), 1000);
+	 */
+
 	if (posIdx == (MAXPOSITIONS-2u))
 	{
 		LedLD3ON();
@@ -202,7 +217,7 @@ uint8_t msmStateRunning(struct MSM_state* state)
  * */
 uint8_t msmStateError(struct MSM_state* state)
 {
-	if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == 0u)
+	if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == 1u)
 	{
 		state->next = msmStateRunning;
 		state->stateName = MSM_STATE_RUNNING;

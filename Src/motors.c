@@ -9,9 +9,11 @@
 
 #include "motors.h"
 #include "main.h"
+#include "mainStateMachine.h"
 
 /* Global variables */
-volatile uint16_t RCRRemainingValue = 0;
+extern volatile uint16_t RCRRemainingValue;
+extern volatile uint16_t testRCRRemainingValue;
 
 /* extern global variables */
 extern TIM_HandleTypeDef htim1;
@@ -441,7 +443,7 @@ uint8_t calcRcrValue(uint8_t *RCRoverflow)
 
 	/* count the total steps of the 3 CH in one RCR cycle */
 	RCRRemainingValue = (uint8_t)xTempu32 + (uint8_t)yTempu32 + (uint8_t)zTempu32;
-
+	//testRCRRemainingValue = (uint8_t)xTempu32 + (uint8_t)yTempu32 + (uint8_t)zTempu32;
 	if ((xTempu32 > UINT8T_MAXV) || (yTempu32 > UINT8T_MAXV) || (zTempu32 > UINT8T_MAXV))
 	{
 		*RCRoverflow = 1;
