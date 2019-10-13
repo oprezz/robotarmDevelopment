@@ -32,6 +32,7 @@
 "Src/freertos.o"
 "Src/main.o"
 "Src/mainStateMachine.o"
+"Src/motors.o"
 "Src/stm32f4xx_hal_msp.o"
 "Src/stm32f4xx_hal_timebase_tim.o"
 "Src/stm32f4xx_it.o"

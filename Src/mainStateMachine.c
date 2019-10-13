@@ -10,9 +10,6 @@
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim1;
 extern UART_HandleTypeDef huart1;
-extern dtMotor MotorR1;
-extern dtMotor MotorPHorizontal;
-extern dtMotor MotorPVertical;
 extern dtPosition desiredPositions[];
 
 
@@ -29,7 +26,7 @@ uint8_t msmStateReset(struct MSM_state* state)
 {
 	/* load some positions - yet hard coded */
 	char msg[] = {"load pos"};
-	HAL_UART_Transmit(&huart1, (uint8_t*)(&msg), sizeof(msg)/sizeof(msg[0]), 1000);
+	//HAL_UART_Transmit(&huart1, (uint8_t*)(&msg), sizeof(msg)/sizeof(msg[0]), 1000);
 
 	/* #0: initial position */
 	desiredPositions[0] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 0u};
@@ -41,7 +38,7 @@ uint8_t msmStateReset(struct MSM_state* state)
 	desiredPositions[2] = (dtPosition){ .x = 20u, .y = 12u, .z = 6u, .grabPos = 0u};
 
 	/* #3: 3rd position */
-	desiredPositions[3] = (dtPosition){ .x = 420u, .y = 12u, .z = 6u, .grabPos = 1u};
+	desiredPositions[3] = (dtPosition){ .x = 30u, .y = 12u, .z = 6u, .grabPos = 1u};
 
 	/* #4: 4th position */
 	desiredPositions[4] = (dtPosition){ .x = 15u, .y = 12u, .z = 6u, .grabPos = 1u};
@@ -64,25 +61,30 @@ uint8_t msmStateReset(struct MSM_state* state)
  * */
 uint8_t msmStateHoming(struct MSM_state* state)
 {
-	static uint8_t HomingStates = HSM_STATE_RESETHOMEDBITS;
+	static HSM_HomingStateMachine HomingStates = HSM_STATE_RESETHOMEDBITS;
 
 	switch (HomingStates)
 	{
 		case HSM_STATE_RESETHOMEDBITS:
-			MotorR1.homed = 0u;
-			MotorPHorizontal.homed = 0u;
-			MotorPVertical.homed = 0;
+			setSTMotorHomed(STMOTOR_R1_ID, 0);
+			setSTMotorHomed(STMOTOR_PH_ID, 0);
+			setSTMotorHomed(STMOTOR_PV_ID, 0);
 			HomingStates = HSM_STATE_MOTORPH_NEG;
 			break;
 		case HSM_STATE_MOTORPH_NEG:
+			/* TODO */
+			HomingStates = HSM_STATE_MOTORS_HOMED;
 			break;
+		case HSM_STATE_MOTORS_HOMED:
+			setSTMotorHomed(STMOTOR_R1_ID, 1);
+			setSTMotorHomed(STMOTOR_PH_ID, 1);
+			setSTMotorHomed(STMOTOR_PV_ID, 1);
+			HomingStates = HSM_STATE_RESETHOMEDBITS;
 
+			state->next = msmStateReady;
+			state->stateName = MSM_STATE_READY;
+			break;
 	}
-
-
-	state->next = msmStateReady;
-	state->stateName = MSM_STATE_READY;
-
 	return state->stateName;
 }
 
@@ -117,8 +119,9 @@ uint8_t msmStateRunning(struct MSM_state* state)
 	static uint8_t posIdx = 0u;
 	/* flag, is set, if the next position is further then the possible RCR value at once */
 	static uint8_t RCRoverflow = 0u;
+	static uint32_t setDirRetVal = 0u;
 	uint8_t RCRValue = 0u;
-	uint32_t setDirRetVal = 0u;
+
 
 	/* DEBUG ONLY */
 	char msg_01[4] = {""};
@@ -131,40 +134,40 @@ uint8_t msmStateRunning(struct MSM_state* state)
 	 * 	- RCRRemainingValue is the total nubmer of steps that the 3 channels has to step in one RCR cycle.
 	 * 		if it has reached zero, then further steps are needed with the reinitialization of the timer
 	 * */
-	if (((MotorR1.motorState == MOTORSTATE_STOPPED)			&&
-		(MotorPHorizontal.motorState == MOTORSTATE_STOPPED) &&
-		(MotorPVertical.motorState == MOTORSTATE_STOPPED)) ||
+	if (((getSTMotorMotorState(STMOTOR_R1_ID) == MOTORSTATE_STOPPED) &&
+		(getSTMotorMotorState(STMOTOR_PH_ID) == MOTORSTATE_STOPPED) &&
+		(getSTMotorMotorState(STMOTOR_PV_ID) == MOTORSTATE_STOPPED)) ||
 		((1u == RCRoverflow) && (0u == RCRRemainingValue)))
 	{
 
 		/* if desired position is reached, set the next position */
-		if (PosReached())
+		if (posAllReached())
 		{
 			/* set desired position */
-			setDesiredPos(posIdx);
+			setAllDesiredPos(posIdx);
 
 			/* set the required directions of the motors */
 			setDirRetVal = setAllDirectionsTowardsDesiredPos();
 
 			posIdx = (posIdx == MAXPOSITIONS-1) ? (0u) : (posIdx + 1);
 
-			/* debug only
 			sprintf(msg_01, "%3d", posIdx);
 			HAL_UART_Transmit(&huart1, (uint8_t*)(&msg_01), sizeof(msg_01)/sizeof(msg_01[0]), 1000);
-			*/
+
 		}
 
 		/* no error */
 		if (0u == setDirRetVal)
 		{
+
 			/* calc RCR - repetition counter register , set RCRoverflow if needed*/
 			RCRValue = calcRcrValue(&RCRoverflow);
 
 			/* Start the timer with the new RCRValue */
-			ReInitMotorTimer(RCRValue);
+			reInitMotorTimer(RCRValue);
 
 			/* set other motorstate params and start pwm */
-			StartMotorPWMs();
+			startAllMotorPWMs();
 		}
 		/* error in setting the direction */
 		else
@@ -180,6 +183,17 @@ uint8_t msmStateRunning(struct MSM_state* state)
 	/* stop motor if reached desired position */
 	//StopMotor();
 
+	if (posIdx == MAXPOSITIONS-2u)
+	{
+		LedLD3ON();
+		stopMotorPWM(STMOTOR_R1_ID);
+		stopMotorPWM(STMOTOR_PH_ID);
+		stopMotorPWM(STMOTOR_PV_ID);
+		posIdx = 0u;
+		state->next = msmStateError;
+		state->stateName = MSM_STATE_ERROR;
+	}
+
 	return state->stateName;
 }
 
@@ -188,8 +202,16 @@ uint8_t msmStateRunning(struct MSM_state* state)
  * */
 uint8_t msmStateError(struct MSM_state* state)
 {
-	state->next = msmStateError;
-	state->stateName = MSM_STATE_ERROR;
+	if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == 0u)
+	{
+		state->next = msmStateRunning;
+		state->stateName = MSM_STATE_RUNNING;
+	}
+	else
+	{
+		state->next = msmStateError;
+		state->stateName = MSM_STATE_ERROR;
+	}
 
 	return state->stateName;
 }

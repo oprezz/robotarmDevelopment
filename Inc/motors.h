@@ -10,6 +10,7 @@
 
 
 #include "main.h"
+#include "utilityFunctions.h"
 #include <stdio.h>
 
 /* BEGIN defines */
@@ -47,6 +48,7 @@ typedef struct
 	uint8_t grabPos; // 0 - open, 1 - grabbed, rest is reserved for special grabbing positions
 } dtPosition;
 
+
 /* motor typedef */
 typedef struct{
 	uint8_t ID;
@@ -73,10 +75,34 @@ typedef struct{
 
 /* END type definitions */
 
+/* BEGIN getter functions */
+volatile uint32_t getSTMotorCurrPos(uint8_t ID);
+volatile uint32_t getSTMotorDesiredPos(uint8_t ID);
+bool getSTMotorHomed(uint8_t ID);
+volatile uint8_t getSTMotorDir(uint8_t ID);
+uint8_t getSTMotorAllowedDir(uint8_t ID);
+uint8_t getSTMotorMotorState(uint8_t ID);
+uint32_t getSTMotorTIMCH(uint8_t ID);
+TIM_HandleTypeDef* getSTMotorTIM(uint8_t ID);
+uint16_t getSTMotorEnablePIN(uint8_t ID);
+GPIO_TypeDef* getSTMotorEnablePORT(uint8_t ID);
+uint16_t getSTMotorDirPIN(uint8_t ID);
+GPIO_TypeDef* getSTMotorDirPORT(uint8_t ID);
+/* END getter functions */
+
+/* BEGIN setter functions */
+/* THESE functions are very basic, most needs update */
+void setSTMotorCurrPos(uint8_t ID, uint32_t value);
+void setSTMotorDesiredPos(uint8_t ID, uint32_t value);
+void setSTMotorHomed(uint8_t ID, bool value);
+void setSTMotorAllowedDir(uint8_t ID, uint8_t value);
+void setSTMotorMotorState(uint8_t ID, uint8_t value);
+void setSTMotorTIMCH(uint8_t ID, uint32_t value);
+/* END setter functions */
+
 
 /* BEGIN API function definitions */
 void initAllStepperMotors();
-void setMotorDirection(const uint8_t ID, const uint8_t dir);
 uint8_t setMotorDirection(const uint8_t ID, const uint8_t desiredDirection);
 uint8_t getMotorNumbers();
 uint32_t setAllDirectionsTowardsDesiredPos();
@@ -90,14 +116,11 @@ void reInitMotorTimer(const uint8_t RCRValue);
 void stopMotorPWM(const uint8_t ID);
 void stopAllMotorBasedPos();
 uint8_t FreeRunMotorInDesiredDir(const uint8_t MotorID, const uint8_t desDir);
+void incrementSTMotorPos(const uint8_t ID);
 
 
 /* END API function definitions */
 
-/* BEGIN static function definitions */
-static uint8_t maxOfThree(uint8_t value1, uint8_t value2, uint8_t value3);
-
-/* END static function definitions */
 
 /* might be moved */
 uint8_t calcRcrValue(uint8_t *RCRoverflow);

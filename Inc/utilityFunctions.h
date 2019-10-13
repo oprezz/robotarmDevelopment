@@ -24,16 +24,11 @@
 volatile uint16_t RCRRemainingValue;
 
 /* function definitions */
-void initPositions();
-uint8_t maxOfThree(uint8_t value1, uint8_t value2, uint8_t value3);
-void setDesiredPos(const uint8_t posIdx);
-uint8_t calcRcrValue(uint8_t *RCRoverflow);
-void ReInitMotorTimer(const uint8_t RCRValue);
-void StartMotorPWMs();
-bool PosReached();
-void StopMotor();
-uint32_t setAllDirectionsTowardsDesiredPos();
-void FreeRunMotorInDesiredDir(const uint8_t MotorID, const uint8_t desDir);
-void LedToggle();
+void LedLD3OFF();
+void LedLD3ON();
+void LedLD3Toggle();
+void LedLD4OFF();
+void LedLD4ON();
+void LedLD4Toggle();
 
 #endif /* UTILITYFUNCTIONS_H_ */

@@ -136,6 +136,7 @@ int main(void)
   MX_SPI1_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+  initAllStepperMotors();
   initPositions();
 
   /* USER CODE END 2 */
@@ -714,6 +715,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOG, GreenLed_LD3_Pin|RedLed_LD4_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : PA0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : MotorPVertical_DIR_Pin MotorPVertical_ENABLE_Pin MotorPVertical_COM_Pin MotorPHorizontal_DIR_Pin 
                            MotorPHorizontal_ENABLE_Pin MotorPHorizontal_COM_Pin */
   GPIO_InitStruct.Pin = MotorPVertical_DIR_Pin|MotorPVertical_ENABLE_Pin|MotorPVertical_COM_Pin|MotorPHorizontal_DIR_Pin 
@@ -871,27 +878,27 @@ void StartRobotControlTask(void const * argument)
 void StartCommunicationTask(void const * argument)
 {
   /* USER CODE BEGIN StartCommunicationTask */
-  uint8_t temp_08 = 0;
+  uint8_t temp_08 = 3;
+  uint8_t temp_b = 0;
   uint32_t temp_32 = 0;
   char DEBUGMSG_10[48] = {""};
-
   TickType_t xLastWakeTime;
-  const TickType_t xDelay250ms = pdMS_TO_TICKS(500);
+  const TickType_t xDelay250ms = pdMS_TO_TICKS(25);
 
   /* The xLastWakeTime variable needs to be initialized with the current tick
    * count. Note that this is the only time the variable is written to explicitly.
    * After this xLastWakeTime is automatically updated within vTaskDelayUntil(). */
   xLastWakeTime = xTaskGetTickCount();
 
+
   /* Infinite loop */
   for(;;)
   {
 
 	/* prints the current and desired positions to serial - recommendation: use XTCO program as serial console*/
-	sprintf(DEBUGMSG_10, "{R1,PH,PV}:{%4lu(%4lu), %4lu(%4lu), %4lu(%4lu)}", MotorR1.currPos, MotorR1.desiredPos, MotorPHorizontal.currPos, MotorPHorizontal.desiredPos, MotorPVertical.currPos, MotorPVertical.desiredPos);
+	sprintf(DEBUGMSG_10, "{R1,PH,PV}:{%4lu(%4lu), %4lu(%4lu), %4lu(%4lu)}", getSTMotorCurrPos(STMOTOR_R1_ID), getSTMotorDesiredPos(STMOTOR_R1_ID), getSTMotorCurrPos(STMOTOR_PH_ID), getSTMotorDesiredPos(STMOTOR_PH_ID), getSTMotorCurrPos(STMOTOR_PV_ID), getSTMotorDesiredPos(STMOTOR_PV_ID));
 	HAL_UART_Transmit(&huart1, (uint8_t*)(&DEBUGMSG_10), sizeof(DEBUGMSG_10)/sizeof(DEBUGMSG_10[0]), 1000);
 
-	LedToggle();
 
 	/* this makes the task to run at the prescribed fixed frequency */
 	osDelayUntil(&xLastWakeTime, xDelay250ms);

@@ -15,6 +15,7 @@ volatile uint16_t RCRRemainingValue = 0;
 
 /* extern global variables */
 extern TIM_HandleTypeDef htim1;
+extern UART_HandleTypeDef huart1;
 
 /* Private variables */
 
@@ -23,6 +24,9 @@ static dtStepperMotor StepperMotors[STMOTOR_NR]; //MotorR1, MotorPHorizontal, Mo
 /* positions - 12 piece , init in main*/
 dtPosition desiredPositions[MAXPOSITIONS];
 
+/* BEGIN static functions */
+static uint8_t maxOfThree(uint8_t value1, uint8_t value2, uint8_t value3);
+/* END static functions */
 
 /*
  * @brief initializes the stepper motors, call it once around startupcode
@@ -79,6 +83,99 @@ void initAllStepperMotors()
 
 }
 
+/* getter functions */
+volatile uint32_t getSTMotorCurrPos(uint8_t ID)
+{
+	return StepperMotors[ID].currPos;
+}
+
+volatile uint32_t getSTMotorDesiredPos(uint8_t ID)
+{
+	return StepperMotors[ID].desiredPos;
+}
+
+bool getSTMotorHomed(uint8_t ID)
+{
+	return StepperMotors[ID].homed;
+}
+
+volatile uint8_t getSTMotorDir(uint8_t ID)
+{
+	return StepperMotors[ID].dir;
+}
+
+uint8_t getSTMotorAllowedDir(uint8_t ID)
+{
+	return StepperMotors[ID].allowedDir;
+}
+
+uint8_t getSTMotorMotorState(uint8_t ID)
+{
+	return StepperMotors[ID].motorState;
+}
+
+uint32_t getSTMotorTIMCH(uint8_t ID)
+{
+	return StepperMotors[ID].TIM_CH;
+}
+
+TIM_HandleTypeDef* getSTMotorTIM(uint8_t ID)
+{
+	return StepperMotors[ID].TIM;
+}
+
+uint16_t getSTMotorEnablePIN(uint8_t ID)
+{
+	return StepperMotors[ID].enablePIN;
+}
+
+GPIO_TypeDef* getSTMotorEnablePORT(uint8_t ID)
+{
+	return StepperMotors[ID].enablePORT;
+}
+
+uint16_t getSTMotorDirPIN(uint8_t ID)
+{
+	return StepperMotors[ID].dirPIN;
+}
+
+GPIO_TypeDef* getSTMotorDirPORT(uint8_t ID)
+{
+	return StepperMotors[ID].dirPORT;
+}
+
+
+/* setter functions */
+void setSTMotorCurrPos(uint8_t ID, uint32_t value)
+{
+	StepperMotors[ID].currPos = value;
+}
+
+void setSTMotorDesiredPos(uint8_t ID, uint32_t value)
+{
+	StepperMotors[ID].desiredPos = value;
+}
+
+void setSTMotorHomed(uint8_t ID, bool value)
+{
+	StepperMotors[ID].homed = value;
+}
+
+void setSTMotorAllowedDir(uint8_t ID, uint8_t value)
+{
+	StepperMotors[ID].allowedDir = value;
+}
+
+void setSTMotorMotorState(uint8_t ID, uint8_t value)
+{
+	StepperMotors[ID].motorState = value;
+}
+
+void setSTMotorTIMCH(uint8_t ID, uint32_t value)
+{
+	StepperMotors[ID].TIM_CH = value;
+}
+
 /*
  * @brief Sets the direction of the motor received in @param1
  * to the desiredDirection received in @param2
@@ -104,7 +201,7 @@ uint8_t setMotorDirection(const uint8_t ID, const uint8_t desiredDirection)
 	}
 	else if (MOTORDIR_POSITIVE == desiredDirection)
 	{
-		if((StepperMotors[ID].allowedDir & MOTORALLOW_POSDIR) >> (MOTORALLOW_POSDIR-1))
+		if((StepperMotors[ID].allowedDir & MOTORALLOW_POSDIR) >> (MOTORALLOW_POSDIR-1u))
 		{
 			StepperMotors[ID].dir = MOTORDIR_POSITIVE;
 		}
@@ -116,12 +213,13 @@ uint8_t setMotorDirection(const uint8_t ID, const uint8_t desiredDirection)
 	}
 	else if (MOTORDIR_NEGATIVE == desiredDirection)
 	{
-		if((StepperMotors[ID].allowedDir & MOTORALLOW_NEGDIR) >> (MOTORALLOW_NEGDIR-1))
+		if((StepperMotors[ID].allowedDir & MOTORALLOW_NEGDIR) >> (MOTORALLOW_NEGDIR-1u))
 		{
 			StepperMotors[ID].dir = MOTORDIR_NEGATIVE;
 		}
 		else
 		{
+			LedLD4ON();
 			StepperMotors[ID].dir = MOTORDIR_UNDEFINED;
 			retVal |= (uint8_t)0x02;
 		}
@@ -141,7 +239,7 @@ uint8_t setMotorDirection(const uint8_t ID, const uint8_t desiredDirection)
 	/* Write the necessary output */
 	if (0u == retVal)
 	{
-		HAL_GPIO_WritePin(StepperMotors[ID].dirPORT, StepperMotors[ID].dirPORT, desiredDirection);
+		HAL_GPIO_WritePin(StepperMotors[ID].dirPORT, StepperMotors[ID].dirPIN, desiredDirection);
 	}
 
 	return retVal;
@@ -166,12 +264,13 @@ uint8_t getMotorNumbers()
 uint32_t setAllDirectionsTowardsDesiredPos()
 {
 	uint32_t retVal = 0u;
+	char DEBUGMSG_10[10] = {""};
 
 	if( getMotorNumbers() == 3u)
 	{
-		retVal |= (setMotorDirection(STMOTOR_R1_ID, MOTORDIR_TODESIREDPOS) << 16);
-		retVal |= (setMotorDirection(STMOTOR_PH_ID, MOTORDIR_TODESIREDPOS) << 8);
-		retVal |= setMotorDirection(STMOTOR_PV_ID, MOTORDIR_TODESIREDPOS);
+		retVal = (setMotorDirection(STMOTOR_R1_ID, MOTORDIR_TODESIREDPOS) << 16);
+		retVal = (setMotorDirection(STMOTOR_PH_ID, MOTORDIR_TODESIREDPOS) << 8);
+		retVal = setMotorDirection(STMOTOR_PV_ID, MOTORDIR_TODESIREDPOS);
 	}
 	else { retVal = 0xFFFFFFFF; }
 	return retVal;
@@ -291,7 +390,7 @@ void stopAllMotorBasedPos()
 
 	for (uint8_t idx = 0; idx < tempMotorNumber; idx++)
 	{
-		if ((MOTORSTATE_RUNNING == StepperMotors[idx]) && posReached(idx))
+		if ((MOTORSTATE_RUNNING == getSTMotorMotorState(idx)) && posReached(idx))
 		{
 			stopMotorPWM(idx);
 		}
@@ -332,9 +431,9 @@ uint8_t calcRcrValue(uint8_t *RCRoverflow)
 {
 	uint8_t RCRValue;
 	/* distance between current pos and desired pos - abs value */
-	uint32_t xTempu32 = (StepperMotors[STMOTOR_R1_ID].desiredPos > StepperMotors[STMOTOR_R1_ID].currPos) ? (StepperMotors[STMOTOR_R1_ID].desiredPos - StepperMotors[STMOTOR_R1_ID].currPos) : (StepperMotors[STMOTOR_R1_ID].currPos - StepperMotors[STMOTOR_R1_ID].desiredPos);
-	uint32_t yTempu32 = (StepperMotors[STMOTOR_PH_ID].desiredPos > StepperMotors[STMOTOR_PH_ID].currPos) ? (StepperMotors[STMOTOR_PH_ID].desiredPos - StepperMotors[STMOTOR_PH_ID].currPos) : (StepperMotors[STMOTOR_PH_ID].currPos - StepperMotors[STMOTOR_PH_ID].desiredPos);
-	uint32_t zTempu32 = (StepperMotors[STMOTOR_PV_ID].desiredPos > StepperMotors[STMOTOR_PV_ID].currPos) ? (StepperMotors[STMOTOR_PV_ID].desiredPos - StepperMotors[STMOTOR_PV_ID].currPos) : (StepperMotors[STMOTOR_PV_ID].currPos - StepperMotors[STMOTOR_PV_ID].desiredPos);
+	uint32_t xTempu32 = (getSTMotorDesiredPos(STMOTOR_R1_ID) > getSTMotorCurrPos(STMOTOR_R1_ID)) ? (getSTMotorDesiredPos(STMOTOR_R1_ID) - getSTMotorCurrPos(STMOTOR_R1_ID)) : (getSTMotorCurrPos(STMOTOR_R1_ID) - getSTMotorDesiredPos(STMOTOR_R1_ID));
+	uint32_t yTempu32 = (getSTMotorDesiredPos(STMOTOR_PH_ID) > getSTMotorCurrPos(STMOTOR_PH_ID)) ? (getSTMotorDesiredPos(STMOTOR_PH_ID) - getSTMotorCurrPos(STMOTOR_PH_ID)) : (getSTMotorCurrPos(STMOTOR_PH_ID) - getSTMotorDesiredPos(STMOTOR_PH_ID));
+	uint32_t zTempu32 = (getSTMotorDesiredPos(STMOTOR_PV_ID) > getSTMotorCurrPos(STMOTOR_PV_ID)) ? (getSTMotorDesiredPos(STMOTOR_PV_ID) - getSTMotorCurrPos(STMOTOR_PV_ID)) : (getSTMotorCurrPos(STMOTOR_PV_ID) - getSTMotorDesiredPos(STMOTOR_PV_ID));
 
 	/* count the total steps of the 3 CH in one RCR cycle */
 	RCRRemainingValue = (uint8_t)xTempu32 + (uint8_t)yTempu32 + (uint8_t)zTempu32;
@@ -353,9 +452,16 @@ uint8_t calcRcrValue(uint8_t *RCRoverflow)
 	return RCRValue;
 }
 
-
-
-
+/*
+ * @brief increments the motor's current position to the corresponding direction
+ */
+void incrementSTMotorPos(const uint8_t ID)
+{
+	uint32_t tCurrPos = getSTMotorCurrPos(ID);
+	uint8_t tDir = getSTMotorDir(ID);
+	tCurrPos = (tDir == MOTORDIR_POSITIVE) ? (tCurrPos + 1) : (tCurrPos - 1);
+	setSTMotorCurrPos(ID, tCurrPos);
+}
 
 
 

@@ -12,6 +12,7 @@
 #include "cmsis_os.h"
 #include "main.h"
 #include "utilityFunctions.h"
+#include "motors.h"
 #include <stdio.h>
 
 
@@ -29,7 +30,8 @@ typedef enum{
 typedef enum{
 	HSM_STATE_RESETHOMEDBITS = (uint8_t)0u,
 	HSM_STATE_MOTORPH_NEG = (uint8_t)5u,
-};
+	HSM_STATE_MOTORS_HOMED = (uint8_t)240u
+} HSM_HomingStateMachine;
 
 struct MSM_state;
 

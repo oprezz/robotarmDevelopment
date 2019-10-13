@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "utilityFunctions.h"
+#include "motors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,9 +64,6 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
-extern dtMotor MotorR1;
-extern dtMotor MotorPHorizontal;
-extern dtMotor MotorPVertical;
 extern volatile uint16_t RCRRemainingValue;
 
 /* USER CODE END EV */
@@ -323,19 +321,20 @@ void TIM6_DAC_IRQHandler(void)
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	uint8_t temp = 0u;
 	switch(GPIO_Pin){
 		case GPIO_PIN_2:
 			if(HAL_GPIO_ReadPin(LSPos_MotorR1_GPIO_Port, LSPos_MotorR1_Pin) == 1)
 			{
 				/* In this case, the Limit Switch is ON, pressed. The SW does not allow the motor to go further in this direction */
-				StopMotorBasedParam(MOTOR_R1_ID);
-				MotorR1.allowedDir = (MotorR1.allowedDir & ~(MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
-				ledON();
+				stopMotorPWM(STMOTOR_R1_ID);
+				temp = (getSTMotorAllowedDir(STMOTOR_R1_ID) & ~(MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_R1_ID, temp);
 			}
 			else
 			{
-				MotorR1.allowedDir = (MotorR1.allowedDir | MOTORALLOW_POSDIR) & MOTORALLOW_MASK;
-				ledOFF();
+				temp = (getSTMotorAllowedDir(STMOTOR_R1_ID) | (MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_R1_ID, temp);
 			}
 		break;
 
@@ -343,27 +342,29 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			if(HAL_GPIO_ReadPin(LSNeg_MotorR1_GPIO_Port, LSNeg_MotorR1_Pin) == 1)
 			{
 				/* In this case, the Limit Switch is ON, pressed. The SW does not allow the motor to go further in this direction */
-				StopMotorBasedParam(MOTOR_R1_ID);
-				MotorR1.allowedDir = (MotorR1.allowedDir & ~(MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				stopMotorPWM(STMOTOR_R1_ID);
+				temp = (getSTMotorAllowedDir(STMOTOR_R1_ID) & ~(MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_R1_ID, temp);
 			}
 			else
 			{
-				init_motorA();
-				MotorR1.allowedDir = (MotorR1.allowedDir | MOTORALLOW_NEGDIR) & MOTORALLOW_MASK;
-			}
+				temp = (getSTMotorAllowedDir(STMOTOR_R1_ID) | (MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_R1_ID, temp);
+				}
 		break;
 
 		case GPIO_PIN_4:
 			if(HAL_GPIO_ReadPin(LSPos_MotorPHorizontal_GPIO_Port, LSPos_MotorPHorizontal_Pin) == 1)
 			{
 				/* In this case, the Limit Switch is ON, pressed. The SW does not allow the motor to go further in this direction */
-				StopMotorBasedParam(MOTOR_PH_ID);
-				MotorPHorizontal.allowedDir = (MotorPHorizontal.allowedDir & ~(MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				stopMotorPWM(STMOTOR_PH_ID);
+				temp = (getSTMotorAllowedDir(STMOTOR_PH_ID) & ~(MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PH_ID, temp);
 			}
 			else
 			{
-				init_motorB();
-				MotorPHorizontal.allowedDir = (MotorPHorizontal.allowedDir | (MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				temp = (getSTMotorAllowedDir(STMOTOR_PH_ID) | (MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PH_ID, temp);
 			}
 		break;
 
@@ -371,13 +372,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			if(HAL_GPIO_ReadPin(LSNeg_MotorPHorizontal_Pin, LSNeg_MotorPHorizontal_Pin) == 1)
 			{
 				/* In this case, the Limit Switch is ON, pressed. The SW does not allow the motor to go further in this direction */
-				StopMotorBasedParam(MOTOR_PH_ID);
-				MotorPHorizontal.allowedDir = (MotorPHorizontal.allowedDir & ~(MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				stopMotorPWM(STMOTOR_PH_ID);
+				temp = (getSTMotorAllowedDir(STMOTOR_PH_ID) & ~(MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PH_ID, temp);
 			}
 			else
 			{
-				init_motorB();
-				MotorPHorizontal.allowedDir = (MotorPHorizontal.allowedDir & MOTORALLOW_NEGDIR) & MOTORALLOW_MASK;
+				temp = (getSTMotorAllowedDir(STMOTOR_PH_ID) | (MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PH_ID, temp);
 			}
 		break;
 
@@ -385,13 +387,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			if(HAL_GPIO_ReadPin(LSPos_MotorPVertical_GPIO_Port, LSPos_MotorPVertical_Pin) == 1)
 			{
 				/* In this case, the Limit Switch is ON, pressed. The SW does not allow the motor to go further in this direction */
-				StopMotorBasedParam(MOTOR_PV_ID);
-				MotorPVertical.allowedDir = (MotorPVertical.allowedDir & ~(MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				stopMotorPWM(STMOTOR_PV_ID);
+				temp = (getSTMotorAllowedDir(STMOTOR_PV_ID) & ~(MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PV_ID, temp);
 			}
 			else
 			{
-				init_motorC();
-				MotorPVertical.allowedDir = (MotorPVertical.allowedDir & MOTORALLOW_POSDIR) & MOTORALLOW_MASK;
+			temp = (getSTMotorAllowedDir(STMOTOR_PV_ID) | (MOTORALLOW_POSDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PV_ID, temp);
 			}
 		break;
 
@@ -399,13 +402,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			if(HAL_GPIO_ReadPin(LSNeg_MotorPVertical_GPIO_Port, LSNeg_MotorPVertical_Pin) == 1)
 			{
 				/* In this case, the Limit Switch is ON, pressed. The SW does not allow the motor to go further in this direction */
-				StopMotorBasedParam(MOTOR_PV_ID);
-				MotorPVertical.allowedDir = (MotorPVertical.allowedDir & ~(MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				stopMotorPWM(STMOTOR_PV_ID);
+				temp = (getSTMotorAllowedDir(STMOTOR_PV_ID) & ~(MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PV_ID, temp);
 			}
 			else
 			{
-				init_motorC();
-				MotorPVertical.allowedDir = (MotorPVertical.allowedDir & MOTORALLOW_NEGDIR) & MOTORALLOW_MASK;
+				temp = (getSTMotorAllowedDir(STMOTOR_PV_ID) | (MOTORALLOW_NEGDIR)) & MOTORALLOW_MASK;
+				setSTMotorAllowedDir(STMOTOR_PV_ID, temp);
 			}
 		break;
 
@@ -431,29 +435,26 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 		{
 			/* count current movement */
 			case HAL_TIM_ACTIVE_CHANNEL_1:
-				MotorR1.currPos = (MotorR1.dir == MOTORDIR_POSITIVE) ? (MotorR1.currPos + 1) : (MotorR1.currPos - 1);
-				if (MotorR1.currPos == MotorR1.desiredPos)
+				incrementSTMotorPos(STMOTOR_R1_ID);
+				if(posReached(STMOTOR_R1_ID))
 				{
-					HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_1);
-					MotorR1.motorState = MOTORSTATE_STOPPED;
+					stopMotorPWM(STMOTOR_R1_ID);
 				}
 				break;
 
 			case HAL_TIM_ACTIVE_CHANNEL_2:
-				MotorPHorizontal.currPos = (MotorPHorizontal.dir == MOTORDIR_POSITIVE) ? (MotorPHorizontal.currPos + 1) : (MotorPHorizontal.currPos - 1);
-				if (MotorPHorizontal.currPos == MotorPHorizontal.desiredPos)
+				incrementSTMotorPos(STMOTOR_PH_ID);
+				if(posReached(STMOTOR_PH_ID))
 				{
-					HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_2);
-					MotorPHorizontal.motorState = MOTORSTATE_STOPPED;
+					stopMotorPWM(STMOTOR_PH_ID);
 				}
 				break;
 
 			case HAL_TIM_ACTIVE_CHANNEL_3:
-				MotorPVertical.currPos = (MotorPVertical.dir == MOTORDIR_POSITIVE) ? (MotorPVertical.currPos + 1) : (MotorPVertical.currPos - 1);
-				if (MotorPVertical.currPos == MotorPVertical.desiredPos)
+				incrementSTMotorPos(STMOTOR_PV_ID);
+				if(posReached(STMOTOR_PV_ID))
 				{
-					HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_3);
-					MotorPVertical.motorState = MOTORSTATE_STOPPED;
+					stopMotorPWM(STMOTOR_PV_ID);
 				}
 				break;
 
