@@ -73,6 +73,16 @@ typedef struct{
 	GPIO_TypeDef* dirPORT;
 } dtStepperMotor;
 
+
+typedef struct{
+	uint8_t ID;
+	uint32_t TIM_CH;	//0:0x00000000, 1:0x..04, 2:0x..08, :0x0..0C
+	TIM_HandleTypeDef* TIM; //address of the used timer
+	uint16_t enablePIN;
+	GPIO_TypeDef* enablePORT;
+	uint16_t dirPIN;
+	GPIO_TypeDef* dirPORT;
+} dtStepperMotorInit;
 /* END type definitions */
 
 /* BEGIN getter functions */
@@ -102,7 +112,7 @@ void setSTMotorTIMCH(uint8_t ID, uint32_t value);
 
 
 /* BEGIN API function definitions */
-void initAllStepperMotors();
+bool initStepperMotors();
 uint8_t setMotorDirection(const uint8_t ID, const uint8_t desiredDirection);
 uint8_t getMotorNumbers();
 uint32_t setAllDirectionsTowardsDesiredPos();

@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "mainStateMachine.h"
 #include "utilityFunctions.h"
+#include "motors.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -103,8 +104,36 @@ void StartCommunicationTask(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  /* system parameters */
+	dtStepperMotorInit StepperMotors[3];
+	StepperMotors[0] = (dtStepperMotorInit) {
+			.ID = STMOTOR_R1_ID,
+			.TIM_CH = TIM_CHANNEL_1,
+			.TIM = &htim1,
+			.enablePIN = MotorR1_ENABLE_Pin,
+			.enablePORT = MotorR1_ENABLE_GPIO_Port,
+			.dirPIN = MotorR1_DIR_Pin,
+			.dirPORT = MotorR1_DIR_GPIO_Port
+	};
 
+	StepperMotors[1] = (dtStepperMotorInit) {
+			.ID = STMOTOR_PH_ID,
+			.TIM_CH = TIM_CHANNEL_2,
+			.TIM = &htim1,
+			.enablePIN = MotorPHorizontal_ENABLE_Pin,
+			.enablePORT = MotorPHorizontal_ENABLE_GPIO_Port,
+			.dirPIN = MotorPHorizontal_DIR_Pin,
+			.dirPORT = MotorPHorizontal_DIR_GPIO_Port
+	};
+
+	StepperMotors[2] = (dtStepperMotorInit) {
+			.ID = STMOTOR_PV_ID,
+			.TIM_CH = TIM_CHANNEL_3,
+			.TIM = &htim1,
+			.enablePIN = MotorPVertical_ENABLE_Pin,
+			.enablePORT = MotorPVertical_ENABLE_GPIO_Port,
+			.dirPIN = MotorPVertical_DIR_Pin,
+			.dirPORT = MotorPVertical_DIR_GPIO_Port
+	};
   /* USER CODE END 1 */
   
 
@@ -136,7 +165,9 @@ int main(void)
   MX_SPI1_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  initAllStepperMotors();
+  initStepperMotors(StepperMotors[0]);
+  initStepperMotors(StepperMotors[1]);
+  initStepperMotors(StepperMotors[2]);
   initPositions();
 
   /* USER CODE END 2 */

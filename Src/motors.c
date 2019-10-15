@@ -33,55 +33,34 @@ static uint8_t maxOfThree(uint8_t value1, uint8_t value2, uint8_t value3);
 /*
  * @brief initializes the stepper motors, call it once around startupcode
  */
-void initAllStepperMotors()
+bool initStepperMotors(dtStepperMotorInit motor)
 {
-	StepperMotors[STMOTOR_R1_ID] = (dtStepperMotor){
-			.ID = STMOTOR_R1_ID,
-			.currPos = 0u,
-			.desiredPos = 0u,
-			.homed = false,
-			.dir = MOTORDIR_POSITIVE,
-			.allowedDir = MOTORALLOW_BOTHDIR,
-			.motorState = MOTORSTATE_STOPPED,
-			.TIM_CH = TIM_CHANNEL_1,
-			.TIM = &htim1,
-			.enablePIN = MotorR1_ENABLE_Pin,
-			.enablePORT = MotorR1_ENABLE_GPIO_Port,
-			.dirPIN = MotorR1_DIR_Pin,
-			.dirPORT = MotorR1_DIR_GPIO_Port
-	};
+	static uint8_t MotorIdx = 0;
+	dtStepperMotor tempMotor;
+	if (MotorIdx != STMOTOR_NR)
+	{
 
-	StepperMotors[STMOTOR_PH_ID] = (dtStepperMotor){
-			.ID = STMOTOR_PH_ID,
-			.currPos = 0u,
-			.desiredPos = 0u,
-			.homed = false,
-			.dir = MOTORDIR_POSITIVE,
-			.allowedDir = MOTORALLOW_BOTHDIR,
-			.motorState = MOTORSTATE_STOPPED,
-			.TIM_CH = TIM_CHANNEL_2,
-			.TIM = &htim1,
-			.enablePIN = MotorPHorizontal_ENABLE_Pin,
-			.enablePORT = MotorPHorizontal_ENABLE_GPIO_Port,
-			.dirPIN = MotorPHorizontal_DIR_Pin,
-			.dirPORT = MotorPHorizontal_DIR_GPIO_Port
-	};
-
-	StepperMotors[STMOTOR_PV_ID] = (dtStepperMotor){
-			.ID = STMOTOR_PV_ID,
-			.currPos = 0u,
-			.desiredPos = 0u,
-			.homed = false,
-			.dir = MOTORDIR_POSITIVE,
-			.allowedDir = MOTORALLOW_BOTHDIR,
-			.motorState = MOTORSTATE_STOPPED,
-			.TIM_CH = TIM_CHANNEL_3,
-			.TIM = &htim1,
-			.enablePIN = MotorPVertical_ENABLE_Pin,
-			.enablePORT = MotorPVertical_ENABLE_GPIO_Port,
-			.dirPIN = MotorPVertical_DIR_Pin,
-			.dirPORT = MotorPVertical_DIR_GPIO_Port
-	};
+		StepperMotors[MotorIdx++] = (dtStepperMotor){
+				.ID = motor.ID,
+				.currPos = 0u,
+				.desiredPos = 0u,
+				.homed = false,
+				.dir = MOTORDIR_POSITIVE,
+				.allowedDir = MOTORALLOW_BOTHDIR,
+				.motorState = MOTORSTATE_STOPPED,
+				.TIM_CH = motor.TIM_CH,
+				.TIM = motor.TIM,
+				.enablePIN = motor.enablePIN,
+				.enablePORT = motor.enablePORT,
+				.dirPIN = motor.dirPIN,
+				.dirPORT = motor.dirPORT
+		};
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 
 	HAL_GPIO_WritePin(MotorR1_ENABLE_GPIO_Port, MotorR1_ENABLE_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(MotorPHorizontal_ENABLE_GPIO_Port, MotorPHorizontal_ENABLE_Pin, GPIO_PIN_SET);
