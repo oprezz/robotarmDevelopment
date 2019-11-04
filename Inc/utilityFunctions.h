@@ -13,6 +13,7 @@
 #include "main.h"
 #include "mainStateMachine.h"
 #include "motors.h"
+#include "stm32f4xx_hal_tim.h"
 
 #define UINT8T_MAXV (uint8_t)255u
 

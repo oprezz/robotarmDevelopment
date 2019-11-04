@@ -13,6 +13,7 @@
 #include "main.h"
 #include "utilityFunctions.h"
 #include "motors.h"
+#include "encoder.h"
 #include <stdio.h>
 
 /* global variables */

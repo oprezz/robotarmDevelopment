@@ -12,6 +12,7 @@
 #include "main.h"
 #include "utilityFunctions.h"
 #include <stdio.h>
+#include "encoder.h"
 
 /* BEGIN defines */
 /* motor defines */

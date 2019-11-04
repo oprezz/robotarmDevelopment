@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Src/encoder.c \
 ../Src/freertos.c \
 ../Src/main.c \
 ../Src/mainStateMachine.c \
@@ -16,6 +17,7 @@ C_SRCS += \
 ../Src/utilityFunctions.c 
 
 OBJS += \
+./Src/encoder.o \
 ./Src/freertos.o \
 ./Src/main.o \
 ./Src/mainStateMachine.o \
@@ -28,6 +30,7 @@ OBJS += \
 ./Src/utilityFunctions.o 
 
 C_DEPS += \
+./Src/encoder.d \
 ./Src/freertos.d \
 ./Src/main.d \
 ./Src/mainStateMachine.d \

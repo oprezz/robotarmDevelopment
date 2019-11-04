@@ -56,6 +56,9 @@ uint8_t msmStateReset(struct MSM_state* state)
 	/* #3: 7th position */
 	desiredPositions[7] = (dtPosition){ .x = 0u, .y = 0u, .z = 0u, .grabPos = 0u};
 
+	/* reset the encoders */
+	resetAllEncoders();
+
 	/* CONDITION TO BE ADDED */
 	state->next = msmStateHoming;
 	state->stateName = MSM_STATE_HOMING;

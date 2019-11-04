@@ -27,6 +27,7 @@
 #include "mainStateMachine.h"
 #include "utilityFunctions.h"
 #include "motors.h"
+#include "encoder.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -86,6 +87,7 @@ static void MX_USART3_UART_Init(void);
 void StartDefaultTask(void const * argument);
 void StartRobotControlTask(void const * argument);
 void StartCommunicationTask(void const * argument);
+
 
 /* USER CODE BEGIN PFP */
 
@@ -170,6 +172,8 @@ int main(void)
   initStepperMotors(StepperMotors[2]);
   initPositions();
 
+  initEncoder(ENCODER_NR0_ZR20, &htim3, ENCODER_NR0_MAXVALUE);
+
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -239,6 +243,7 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
+
 
 /**
   * @brief System Clock Configuration
@@ -909,6 +914,7 @@ void StartCommunicationTask(void const * argument)
   uint8_t temp_b = 0;
   uint32_t temp_32 = 0;
   char DEBUGMSG_10[48] = {""};
+  char DEBUGMSG_CNT[12] = {""};
   TickType_t xLastWakeTime;
   const TickType_t xDelay250ms = pdMS_TO_TICKS(25);
 
@@ -924,7 +930,10 @@ void StartCommunicationTask(void const * argument)
 
 	/* prints the current and desired positions to serial - recommendation: use XTCO program as serial console*/
 	sprintf(DEBUGMSG_10, "{R1,PH,PV}:{%4lu(%4lu), %4lu(%4lu), %4lu(%4lu)}", getSTMotorCurrPos(STMOTOR_R1_ID), getSTMotorDesiredPos(STMOTOR_R1_ID), getSTMotorCurrPos(STMOTOR_PH_ID), getSTMotorDesiredPos(STMOTOR_PH_ID), getSTMotorCurrPos(STMOTOR_PV_ID), getSTMotorDesiredPos(STMOTOR_PV_ID));
-	HAL_UART_Transmit(&huart1, (uint8_t*)(&DEBUGMSG_10), sizeof(DEBUGMSG_10)/sizeof(DEBUGMSG_10[0]), 1000);
+	//HAL_UART_Transmit(&huart1, (uint8_t*)(&DEBUGMSG_10), sizeof(DEBUGMSG_10)/sizeof(DEBUGMSG_10[0]), 1000);
+	temp_32 = getEncoderValue();
+	sprintf(DEBUGMSG_CNT, "cnt:%lu\n", temp_32);
+	HAL_UART_Transmit(&huart1, (uint8_t*)(&DEBUGMSG_CNT), sizeof(DEBUGMSG_CNT)/sizeof(DEBUGMSG_CNT[0]), 1000);
 
 
 	/* this makes the task to run at the prescribed fixed frequency */
